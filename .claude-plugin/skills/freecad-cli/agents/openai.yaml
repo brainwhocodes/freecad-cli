@@ -1,0 +1,4 @@
+interface:
+  display_name: "freecad-cli"
+  short_description: "Control FreeCAD from agent workflows"
+  default_prompt: "Use $freecad-cli to verify the FreeCAD connection, run a small modeling task, and export the result."

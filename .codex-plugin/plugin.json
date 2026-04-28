@@ -1,0 +1,37 @@
+{
+  "name": "freecad-cli",
+  "version": "0.1.0",
+  "description": "Operate a running FreeCAD instance from AI agents through the freecad-cli shell interface.",
+  "author": {
+    "name": "yoshikouki",
+    "url": "https://github.com/yoshikouki/freecad-cli"
+  },
+  "homepage": "https://github.com/yoshikouki/freecad-cli",
+  "repository": "https://github.com/yoshikouki/freecad-cli",
+  "license": "LGPL-2.1-or-later",
+  "keywords": [
+    "freecad",
+    "cad",
+    "3d-modeling",
+    "rpc",
+    "ai-agent"
+  ],
+  "skills": "./.claude-plugin/skills/",
+  "interface": {
+    "displayName": "freecad-cli",
+    "shortDescription": "Control FreeCAD from agent workflows.",
+    "longDescription": "Use freecad-cli to set up the local FreeCAD RPC addon, run Python through FreeCAD's live GUI process, inspect documents, export models, take screenshots, and troubleshoot agent-driven CAD operations.",
+    "developerName": "yoshikouki",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/yoshikouki/freecad-cli",
+    "defaultPrompt": [
+      "Use freecad-cli to verify the FreeCAD connection, create a small model, and export it.",
+      "Use freecad-cli to troubleshoot why my agent cannot connect to FreeCAD."
+    ],
+    "brandColor": "#4B5563"
+  }
+}

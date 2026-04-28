@@ -99,5 +99,5 @@ The edge list references a previous feature's numbering. Always use the **latest
 
 If the screenshot causes issues (e.g., MCP response size limits), reduce dimensions:
 ```sh
-freecad-cli screenshot --width 800 --height 600
+freecad-cli screenshot --width 600
 ```

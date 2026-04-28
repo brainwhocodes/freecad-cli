@@ -1,24 +1,24 @@
 ---
 name: freecad-cli
 description: Install, update, and operate freecad-cli — a CLI tool that controls FreeCAD via XML-RPC. Use when the user asks to set up freecad-cli, create 3D models, run Python code in FreeCAD, take screenshots, or troubleshoot freecad-cli commands.
-argument-hint: "[task-description]"
 ---
 
 # freecad-cli Agent Skill
 
-## Core Principle
+## Core Model
 
-**`execute-code` is the primary primitive.** Anything possible with FreeCAD's Python API can be done via this command. Other commands are convenience wrappers. When in doubt, use `execute-code`.
+`freecad-cli` is a shell bridge into a running FreeCAD GUI process.
 
----
+- The FreeCAD addon is a thin localhost XML-RPC eval proxy.
+- `execute-code` is the primary primitive and can reach the full FreeCAD Python API.
+- Other commands are convenience wrappers for setup, diagnostics, screenshots, document state, exports, and parts-library lookup.
+- The addon runs inside FreeCAD, so connection issues usually require checking both CLI installation and whether FreeCAD was restarted after addon installation.
 
 ## Setup
 
-Follow this playbook **in order**. Do not skip steps.
+Follow this playbook in order.
 
-### 1. Check prerequisites
-
-Run each command and report the result. If anything is missing, ask the user for permission before installing.
+### 1. Check Prerequisites
 
 | Requirement | Command | Pass criteria |
 |---|---|---|
@@ -27,20 +27,21 @@ Run each command and report the result. If anything is missing, ask the user for
 | FreeCAD | Ask user | FreeCAD app is running |
 
 If uv is missing (install after user permission):
+
 ```sh
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### 2. Get the repository
+### 2. Get Repository
 
-If $ARGUMENTS provides a path, use it. Otherwise clone:
+If the user provides a repository path, use it. Otherwise clone:
 
 ```sh
 git clone https://github.com/yoshikouki/freecad-cli.git
 cd freecad-cli
 ```
 
-### 3. Install the CLI
+### 3. Install CLI
 
 ```sh
 uv tool install -e .
@@ -48,7 +49,7 @@ uv tool install -e .
 
 Verify: `freecad-cli --help` runs without error.
 
-### 4. Install the FreeCAD addon
+### 4. Install Addon
 
 ```sh
 freecad-cli install-addon
@@ -58,9 +59,9 @@ Expected: JSON with `"status": "ok"`. `Already installed` is normal.
 
 ### 5. Restart FreeCAD
 
-**Important**: The addon initializes at FreeCAD startup. Ask the user to restart FreeCAD and confirm before proceeding.
+The addon initializes at FreeCAD startup. Ask the user to restart FreeCAD and confirm before proceeding.
 
-### 6. Verify connection
+### 6. Verify Connection
 
 ```sh
 freecad-cli ping
@@ -86,10 +87,10 @@ The FreeCAD addon is symlinked to the repository. File changes from `git pull` a
 
 ## Verify
 
-Run these checks when commands fail unexpectedly:
+Run these checks before modeling and when commands fail unexpectedly:
 
 ```sh
-freecad-cli --version           # CLI installed?
+freecad-cli --help              # CLI installed?
 freecad-cli ping                # RPC connection?
 freecad-cli active-document     # Document available?
 ```
@@ -98,6 +99,18 @@ freecad-cli active-document     # Document available?
 - `connection_refused` → FreeCAD not running, or addon not installed / FreeCAD not restarted
 - `timeout` → FreeCAD running but unresponsive, try restarting
 - `active-document` returns `null` → create a document first: `freecad-cli create-document <name>`
+
+## Operation Loop
+
+1. Start with `freecad-cli ping` and `freecad-cli active-document`.
+2. Create or select a document before modifying geometry.
+3. Use `execute-code` for FreeCAD API work. Keep scripts small enough to diagnose failures.
+4. Call `doc.recompute()` after every geometry or constraint change.
+5. Use JSON or clear `print()` output for state checks.
+6. Take a screenshot when visual confirmation is useful.
+7. Export with the dedicated `export` command when producing STL, STEP, or FCStd files.
+
+For common modeling snippets, read [execute-code-patterns.md](execute-code-patterns.md). For failures, read [troubleshoot.md](troubleshoot.md).
 
 ---
 
@@ -145,7 +158,7 @@ freecad-cli screenshot              # 800px default
 freecad-cli screenshot --width 1920 # custom width
 ```
 
-Output is base64-encoded PNG.
+Output is a base64-encoded square PNG.
 
 ### Global Options
 
@@ -168,8 +181,6 @@ Error codes: `connection_refused`, `timeout`, `rpc_fault`, `invalid_input`
 ## execute-code Patterns
 
 See [execute-code-patterns.md](execute-code-patterns.md) for common FreeCAD Python snippets.
-
----
 
 ## Troubleshooting
 
