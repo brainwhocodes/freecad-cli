@@ -145,6 +145,8 @@ def test_install_addon_windows():
     with patch("platform.system", return_value="Windows"), \
          patch.dict("os.environ", {"APPDATA": appdata_dir}), \
          patch("pathlib.Path.mkdir"), \
+         patch("pathlib.Path.exists", return_value=False), \
+         patch("pathlib.Path.is_symlink", return_value=False), \
          patch("os.symlink") as mock_symlink:
         result = runner.invoke(cli, ["install-addon"])
         assert result.exit_code == 0
@@ -156,6 +158,8 @@ def test_install_addon_symlink_fallback():
     runner = CliRunner()
     with patch("platform.system", return_value="Linux"), \
          patch("pathlib.Path.mkdir"), \
+         patch("pathlib.Path.exists", return_value=False), \
+         patch("pathlib.Path.is_symlink", return_value=False), \
          patch("os.symlink", side_effect=OSError("Symlink unsupported")), \
          patch("shutil.copytree") as mock_copy:
         result = runner.invoke(cli, ["install-addon"])
