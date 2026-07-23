@@ -1,0 +1,12 @@
+{
+  "name": "freecad-cli-marketplace",
+  "owner": {
+    "name": "yoshikouki"
+  },
+  "plugins": [
+    {
+      "name": "freecad-cli",
+      "source": "./"
+    }
+  ]
+}

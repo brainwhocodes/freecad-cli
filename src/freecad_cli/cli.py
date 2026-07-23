@@ -1,5 +1,6 @@
 import os
 import platform
+import shutil
 import sys
 from pathlib import Path
 
@@ -187,6 +188,12 @@ def install_addon():
         mod_dir = Path.home() / "Library" / "Application Support" / "FreeCAD" / "Mod"
     elif system == "Linux":
         mod_dir = Path.home() / ".local" / "share" / "FreeCAD" / "Mod"
+    elif system == "Windows":
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            mod_dir = Path(appdata) / "FreeCAD" / "Mod"
+        else:
+            mod_dir = Path.home() / "AppData" / "Roaming" / "FreeCAD" / "Mod"
     else:
         error(f"Unsupported platform: {system}", "invalid_input")
 
@@ -199,7 +206,10 @@ def install_addon():
             return
         error(f"Path already exists: {link_path}. Remove it first.", "invalid_input")
 
-    os.symlink(addon_src, link_path)
-    success({"path": str(link_path), "source": str(addon_src)})
+    try:
+        os.symlink(addon_src, link_path, target_is_directory=True)
+    except (OSError, PermissionError):
+        shutil.copytree(addon_src, link_path)
 
+    success({"path": str(link_path), "source": str(addon_src)})
 

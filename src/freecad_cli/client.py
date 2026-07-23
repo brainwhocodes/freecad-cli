@@ -21,7 +21,7 @@ class FreeCADClient:
                 socket.setdefaulttimeout(old_timeout)
         except ConnectionRefusedError:
             error("FreeCAD is not running or RPC server is not started", "connection_refused")
-        except socket.timeout:
+        except TimeoutError:
             error("RPC request timed out", "timeout")
         except xmlrpc.client.Fault as e:
             error(f"RPC fault: {e.faultString}", "rpc_fault")
@@ -97,14 +97,35 @@ print(data)
 
     def get_parts_list(self):
         result = self._execute("""
-import json, os
-parts_dir = os.path.join(os.path.dirname(__import__('FreeCAD').__file__), 'Mod', 'Parts_Library')
+import json, os, FreeCAD
+
+candidate_bases = []
+for attr in ('getUserAppDataDir', 'getResourceDir', 'getHomePath'):
+    if hasattr(FreeCAD, attr):
+        try:
+            val = getattr(FreeCAD, attr)()
+            if val:
+                candidate_bases.append(val)
+        except Exception:
+            pass
+
+if hasattr(FreeCAD, '__file__') and FreeCAD.__file__:
+    candidate_bases.append(os.path.dirname(FreeCAD.__file__))
+
+parts_dir = None
+for base in candidate_bases:
+    p = os.path.join(base, 'Mod', 'Parts_Library')
+    if os.path.isdir(p):
+        parts_dir = p
+        break
+
 parts = []
-if os.path.isdir(parts_dir):
+if parts_dir:
     for root, dirs, files in os.walk(parts_dir):
         for f in files:
             if f.endswith(('.FCStd', '.step', '.stp', '.iges', '.igs')):
                 parts.append(os.path.relpath(os.path.join(root, f), parts_dir))
+
 print(json.dumps(parts))
 """)
         return json.loads(result["output"])

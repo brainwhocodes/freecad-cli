@@ -11,7 +11,10 @@ import threading
 import traceback
 from xmlrpc.server import SimpleXMLRPCServer
 
-from PySide2 import QtCore
+try:
+    from PySide6 import QtCore
+except ImportError:
+    from PySide2 import QtCore
 
 _server = None
 _thread = None
@@ -29,6 +32,7 @@ class _MainThreadExecutor(QtCore.QObject):
         super().__init__()
         self.execute_requested.connect(self._run)
 
+    @QtCore.Slot(str, object)
     def _run(self, code, result_queue):
         stdout_capture = io.StringIO()
         old_stdout = sys.stdout

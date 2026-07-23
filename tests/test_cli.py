@@ -137,3 +137,27 @@ def test_rpc_error_propagated():
         mock_cls.return_value = mock
         result = runner.invoke(cli, ["create-document", "Test"])
         assert result.exit_code != 0
+
+def test_install_addon_windows():
+    runner = CliRunner()
+    appdata_dir = r"C:\Users\Test\AppData\Roaming"
+    expected_path = str(Path(appdata_dir) / "FreeCAD" / "Mod" / "FreecadCli")
+    with patch("platform.system", return_value="Windows"), \
+         patch.dict("os.environ", {"APPDATA": appdata_dir}), \
+         patch("pathlib.Path.mkdir"), \
+         patch("os.symlink") as mock_symlink:
+        result = runner.invoke(cli, ["install-addon"])
+        assert result.exit_code == 0
+        output = json.loads(result.output)
+        assert output["data"]["path"] == expected_path
+        assert mock_symlink.call_args[1].get("target_is_directory") is True
+
+def test_install_addon_symlink_fallback():
+    runner = CliRunner()
+    with patch("platform.system", return_value="Linux"), \
+         patch("pathlib.Path.mkdir"), \
+         patch("os.symlink", side_effect=OSError("Symlink unsupported")), \
+         patch("shutil.copytree") as mock_copy:
+        result = runner.invoke(cli, ["install-addon"])
+        assert result.exit_code == 0
+        assert mock_copy.called

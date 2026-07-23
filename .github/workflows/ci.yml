@@ -1,6 +1,6 @@
 name: CI
 
-on:
+"on":
   push:
     branches: [main]
   pull_request:
@@ -16,3 +16,56 @@ jobs:
       - run: uv sync
       - run: uv run pytest
       - run: uv run ruff check .
+
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install FreeCAD and Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository -y ppa:freecad-maintainers/freecad-stable || true
+          sudo apt-get update
+          sudo apt-get install -y freecad xvfb
+
+      - name: Install dependencies & freecad-cli
+        run: |
+          uv sync
+          uv tool install -e .
+
+      - name: Install FreeCAD RPC Addon
+        run: |
+          uv run freecad-cli install-addon
+
+      - name: Launch FreeCAD and run integration tests
+        run: |
+          xvfb-run --auto-servernum freecad &
+          
+          timeout=30
+          start_time=$(date +%s)
+          until uv run freecad-cli ping > /dev/null 2>&1; do
+            current_time=$(date +%s)
+            elapsed=$((current_time - start_time))
+            if [ $elapsed -ge $timeout ]; then
+              echo "Timed out waiting for FreeCAD RPC server"
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "FreeCAD RPC server ready!"
+
+          uv run freecad-cli ping
+          uv run freecad-cli create-document CI_Doc
+          uv run freecad-cli list-documents
+          uv run freecad-cli active-document
+          uv run freecad-cli execute-code "import FreeCAD, Part; doc = FreeCAD.ActiveDocument; doc.addObject('Part::Box', 'Box'); doc.recompute(); print('Box created')"
+          uv run freecad-cli screenshot --width 800
+          uv run freecad-cli export stl -o ci_doc.stl
+          uv run freecad-cli list-parts
+
+          uv run pytest
