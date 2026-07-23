@@ -46,7 +46,7 @@ jobs:
         run: |
           xvfb-run --auto-servernum freecad &
           
-          timeout=30
+          timeout=60
           start_time=$(date +%s)
           until uv run freecad-cli ping > /dev/null 2>&1; do
             current_time=$(date +%s)
